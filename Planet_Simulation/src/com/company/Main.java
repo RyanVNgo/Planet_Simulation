@@ -88,8 +88,9 @@ public class Main extends Canvas implements Runnable  {
         stop();
     }
 
-    private boolean applyOffset = false;
-    private boolean drawDistLines = false;
+    private boolean applyOffset = true;
+    private boolean drawDistLines = true;
+    private boolean drawNames = false;
     private String bodyCenter = "Earth";
 
     private void render() {
@@ -124,26 +125,44 @@ public class Main extends Canvas implements Runnable  {
 
         // Draw line between celestial bodies? Yes!
         if (drawDistLines) {
-            for (int i = 0; i < CBArray.size()-1; i++) {
-                CelestialBody body1 = CBArray.get(i);
-                CelestialBody body2 = CBArray.get(i+1);
+            // Go through each body
+            for (CelestialBody body : CBArray) {
+                // Check for body name (Only draws line for center body)
+                if (body.name.equals(bodyCenter)) {
+                    // Go through each body to draw line toward
+                    for (int j = 0; j < CBArray.size(); j++) {
+                        CelestialBody body2 = CBArray.get(j);
+                        // Ensure body doesn't draw line on itself
+                        if (!body.name.equals(body2.name)) {
+                            // Check if body2 is dead
+                            if (!body2.dead) {
+                                int xPosBody1 = (int)body.xPos;
+                                int yPosBody1 = (int)body.yPos;
+                                int xPosBody2 = (int)body2.xPos;
+                                int yPosBody2 = (int)body2.yPos;
 
-                int xPosBody1 = (int)body1.xPos;
-                int yPosBody1 = (int)body1.yPos;
-                int xPosBody2 = (int)body2.xPos;
-                int yPosBody2 = (int)body2.yPos;
+                                int xOffsetBody1 = WIDTH/2 + xPosBody1 - xCamOffset;
+                                int yOffsetBody1 = HEIGHT/2- yPosBody1 + yCamOffset;
+                                int xOffsetBody2 = WIDTH/2 + xPosBody2 - xCamOffset;
+                                int yOffsetBody2 = HEIGHT/2- yPosBody2 + yCamOffset;
 
-                int xOffsetBody1 = WIDTH/2 + xPosBody1 - xCamOffset;
-                int yOffsetBody1 = HEIGHT/2- yPosBody1 + yCamOffset;
+                                int xPos = (Math.abs(xOffsetBody1) - Math.abs(xOffsetBody2)) / -2;
+                                int yPos = (Math.abs(yOffsetBody1) - Math.abs(yOffsetBody2)) / -2;
+                                int pDist = (int)(2 * Math.sqrt(Math.pow(xPos,2) + Math.pow(yPos,2)));
+                                int xPosStr = xPos + xOffsetBody1;
+                                int yPosStr = yPos + yOffsetBody1;
 
-                int xOffsetBody2 = WIDTH/2 + xPosBody2 - xCamOffset;
-                int yOffsetBody2 = HEIGHT/2- yPosBody2 + yCamOffset;
-
-                g.setColor(Color.WHITE);
-                Polygon line = new Polygon();
-                line.addPoint(xOffsetBody1, yOffsetBody1);
-                line.addPoint(xOffsetBody2, yOffsetBody2);
-                g.drawPolygon(line);
+                                g.setColor(Color.getHSBColor(0,0,.25f));
+                                Polygon line = new Polygon();
+                                line.addPoint(xOffsetBody1, yOffsetBody1);
+                                line.addPoint(xOffsetBody2, yOffsetBody2);
+                                g.drawPolygon(line);
+                                g.setColor(Color.getHSBColor(0,0,.375f));
+                                g.drawString(String.valueOf(pDist), xPosStr, yPosStr);
+                            }
+                        }
+                    }
+                }
 
             }
         }
@@ -164,7 +183,7 @@ public class Main extends Canvas implements Runnable  {
 
             // Draw data for each celestial body
             g.setColor(CB.color);
-            String namStr = CB.name + ":";
+            String namStr = CB.name;
             String velStr = String.format("Vel: (%.3f , %.3f)", CB.xVel, CB.yVel);
             String spdStr = String.format("Spd: %.3f", CB.speed);
             String accStr = String.format("Acc: (%.3f , %.3f)", CB.xAcc, CB.yAcc);
@@ -176,9 +195,14 @@ public class Main extends Canvas implements Runnable  {
             g.drawString(accStr, 0, 48 + (c * 60));
             g.drawString(posStr, 0, 60 + (c * 60));
 
+            // Draw names above planets
+            if (drawNames) {
+                g.drawString(namStr, xOffset, yOffset - 5);
+            }
+
             c++;
         }
-        
+
         // - - -
         g.dispose();
         bs.show();
@@ -187,7 +211,7 @@ public class Main extends Canvas implements Runnable  {
     private void UpdateAllCelestialBodies2() {
         ArrayList<CelestialBody> CBArray = GetCelestialBodies();
 
-        // Go through all Celestial bodies (excluding first, presumably a star)
+        // Go through all Celestial bodies
         for (int i = 0; i < CBArray.size(); i++) {
             CelestialBody mainBody = CBArray.get(i);
 
@@ -198,7 +222,7 @@ public class Main extends Canvas implements Runnable  {
                 ArrayList<Double> xAccArray = new ArrayList<>();
                 ArrayList<Double> yAccArray = new ArrayList<>();
 
-                // Go through all bodies that effect main body (includes first, presumably a star)
+                // Go through all bodies that effect main body
                 for (int p = 0; p < CBArray.size(); p++) {
                     CelestialBody refBody = CBArray.get(p);
 
@@ -271,7 +295,7 @@ public class Main extends Canvas implements Runnable  {
 
     // (String name, int mass, int diam, int xVel, int yVel, int xPos, int yPos, int[] color)
     private CelestialBody earth  = new CelestialBody("Earth", 1, 25, 0, 0, 0, 0, Color.BLUE);
-    private CelestialBody mun = new CelestialBody("Mun", .1, 6, .1, 0, 0, 200, Color.GRAY);
+    private CelestialBody mun = new CelestialBody("Mun", .12, 6, .0896, 0, 0, 200, Color.GRAY);
 
     private ArrayList<CelestialBody> GetCelestialBodies() {
         ArrayList<CelestialBody> celBodyArray = new ArrayList<>();
