@@ -1,0 +1,289 @@
+package com.company;
+
+import javax.swing.*;
+import java.awt.*;
+import java.awt.image.BufferStrategy;
+import java.util.ArrayList;
+
+public class Main extends Canvas implements Runnable  {
+
+    private Thread thread;
+    private JFrame frame;
+    private static String title = "3D Renderer";
+    private static final int WIDTH = 1280;
+    private static final int HEIGHT = 720;
+    private static boolean running = false;
+
+    public Main() {
+        this.frame = new JFrame();
+
+        Dimension size = new Dimension(WIDTH, HEIGHT);
+        this.setPreferredSize(size);
+    }
+
+    public static void main(String[] args) {
+        Main main = new Main();
+        main.frame.setTitle(title);
+        main.frame.add(main);
+        main.frame.pack();
+        main.frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        main.frame.setLocationRelativeTo(null);
+        main.frame.setResizable(false);
+        main.frame.setVisible(true);
+
+        main.start();
+    }
+
+    public synchronized void start() {
+        running = true;
+        this.thread = new Thread(this, "Display");
+        this.thread.start();
+    }
+
+    public synchronized void stop() {
+        running = false;
+        try {
+            this.thread.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private int UPS = 600;
+    @Override
+    public void run() {
+        long lastTime = System.nanoTime();
+        long timer = System.currentTimeMillis();
+        final double ns = 1000000000.0 / UPS;
+        double delta = 0;
+        int frames = 0;
+
+        while (running) {
+            long now = System.nanoTime();
+            delta += (now - lastTime) / ns;
+            lastTime = now;
+
+            while (delta >= 1) {
+                update();
+                render(); // !!!
+                delta--;
+
+            }
+
+            //render(); // !!!
+            frames++;
+
+
+            /*
+            // Frame Rate Counter
+            if(System.currentTimeMillis() - timer > 1000) {
+                timer += 1000;
+                this.frame.setTitle(title + " | " + frames + " fps");
+                frames = 0;
+            }
+            */
+
+        }
+
+        stop();
+    }
+
+    private boolean applyOffset = false;
+    private boolean drawDistLines = false;
+    private String bodyCenter = "Earth";
+
+    private void render() {
+        BufferStrategy bs = this.getBufferStrategy();
+        if (bs == null) {
+            this.createBufferStrategy(3);
+            return;
+        }
+        Graphics g = bs.getDrawGraphics();
+        g.setColor(Color.BLACK);
+        g.fillRect(0,0,WIDTH, HEIGHT);
+
+        // - - -
+
+        int c = 0;
+        ArrayList<CelestialBody> CBArray = GetCelestialBodies();
+
+        // Adjust for cam offset
+        int xCamOffset = 0;
+        int yCamOffset = 0;
+        for (CelestialBody body : CBArray) {
+            if (body.name.equals(bodyCenter)) {
+                if (applyOffset) {
+                    xCamOffset = (int)body.xPos;
+                    yCamOffset = (int)body.yPos;
+                } else {
+                    xCamOffset = 0;
+                    yCamOffset = 0;
+                }
+            }
+        }
+
+        // Draw line between celestial bodies? Yes!
+        if (drawDistLines) {
+            for (int i = 0; i < CBArray.size()-1; i++) {
+                CelestialBody body1 = CBArray.get(i);
+                CelestialBody body2 = CBArray.get(i+1);
+
+                int xPosBody1 = (int)body1.xPos;
+                int yPosBody1 = (int)body1.yPos;
+                int xPosBody2 = (int)body2.xPos;
+                int yPosBody2 = (int)body2.yPos;
+
+                int xOffsetBody1 = WIDTH/2 + xPosBody1 - xCamOffset;
+                int yOffsetBody1 = HEIGHT/2- yPosBody1 + yCamOffset;
+
+                int xOffsetBody2 = WIDTH/2 + xPosBody2 - xCamOffset;
+                int yOffsetBody2 = HEIGHT/2- yPosBody2 + yCamOffset;
+
+                g.setColor(Color.WHITE);
+                Polygon line = new Polygon();
+                line.addPoint(xOffsetBody1, yOffsetBody1);
+                line.addPoint(xOffsetBody2, yOffsetBody2);
+                g.drawPolygon(line);
+
+            }
+        }
+
+        // Draw each celestial body
+        for (CelestialBody CB : CBArray) {
+            int xPos = (int)CB.xPos;
+            int yPos = (int)CB.yPos;
+            int d = CB.diam;
+            int r = d/2;
+
+            int xOffset = WIDTH/2 - r + xPos - xCamOffset;
+            int yOffset = HEIGHT/2 - r - yPos + yCamOffset;
+
+            g.setColor(CB.color);
+            //g.drawOval(xOffset, yOffset, d, d);
+            g.fillOval(xOffset, yOffset, d, d);
+
+            // Draw data for each celestial body
+            g.setColor(CB.color);
+            String namStr = CB.name + ":";
+            String velStr = String.format("Vel: (%.3f , %.3f)", CB.xVel, CB.yVel);
+            String spdStr = String.format("Spd: %.3f", CB.speed);
+            String accStr = String.format("Acc: (%.3f , %.3f)", CB.xAcc, CB.yAcc);
+            String posStr = String.format("Pos: (%.3f , %.3f)", CB.xPos, CB.yPos);
+
+            g.drawString(namStr, 0, 12 + (c * 60));
+            g.drawString(velStr, 0, 24 + (c * 60));
+            g.drawString(spdStr, 0, 36 + (c * 60));
+            g.drawString(accStr, 0, 48 + (c * 60));
+            g.drawString(posStr, 0, 60 + (c * 60));
+
+            c++;
+        }
+        
+        // - - -
+        g.dispose();
+        bs.show();
+    }
+
+    private void UpdateAllCelestialBodies2() {
+        ArrayList<CelestialBody> CBArray = GetCelestialBodies();
+
+        // Go through all Celestial bodies (excluding first, presumably a star)
+        for (int i = 0; i < CBArray.size(); i++) {
+            CelestialBody mainBody = CBArray.get(i);
+
+            // Determine if mainBody is alive and to proceed with calculation
+            if (!mainBody.dead) {
+                ArrayList<Double> xChangeArray = new ArrayList<>();
+                ArrayList<Double> yChangeArray = new ArrayList<>();
+                ArrayList<Double> xAccArray = new ArrayList<>();
+                ArrayList<Double> yAccArray = new ArrayList<>();
+
+                // Go through all bodies that effect main body (includes first, presumably a star)
+                for (int p = 0; p < CBArray.size(); p++) {
+                    CelestialBody refBody = CBArray.get(p);
+
+                    // Ensure program doesn't calculate body on itself
+                    if (!mainBody.name.equals(refBody.name)) {
+
+                        // Determine if refBody is alive and to proceed with calculation
+                        if (!refBody.dead) {
+                            double GC = 6.6743;
+
+                            double xDist = refBody.xPos - mainBody.xPos;
+                            double yDist = refBody.yPos - mainBody.yPos;
+                            double pDist = Math.sqrt(Math.pow(xDist, 2) + Math.pow(yDist, 2));
+
+                            double gForce = (GC * refBody.mass * mainBody.mass) /  Math.pow(pDist, 2);
+                            double xForce = (gForce * xDist) / pDist;
+                            double yForce = (gForce * yDist) / pDist;
+
+                            double xAcc = xForce;
+                            double yAcc = yForce;
+
+                            mainBody.xVel = mainBody.xVel + xAcc;
+                            mainBody.yVel = mainBody.yVel + yAcc;
+
+                            double xChange = (.5 * xAcc) + mainBody.xVel;
+                            double yChange = (.5 * yAcc) + mainBody.yVel;
+
+                            xChangeArray.add(xChange);
+                            yChangeArray.add(yChange);
+                            xAccArray.add(xAcc);
+                            yAccArray.add(yAcc);
+
+                            if (pDist < refBody.diam/2) {
+                                mainBody.dead = true;
+                            }
+                        }
+                    }
+                }
+
+                // Calculate sum xChange and apply
+                double sumXChange = 0;
+                double sumYChange = 0;
+                double sumXAcc = 0;
+                double sumYAcc = 0;
+
+                for (double xChange : xChangeArray) {
+                    sumXChange = sumXChange + xChange;
+                }
+                for (double yChange : yChangeArray) {
+                    sumYChange = sumYChange + yChange;
+                }
+                for (double xAcc : xAccArray) {
+                    sumXAcc += xAcc;
+                }
+                for (double yAcc : yAccArray) {
+                    sumYAcc += yAcc;
+                }
+
+                mainBody.xPos = mainBody.xPos + sumXChange;
+                mainBody.yPos = mainBody.yPos + sumYChange;
+
+                mainBody.UpdateSpeed();
+                mainBody.xAcc = sumXAcc;
+                mainBody.yAcc = sumYAcc;
+
+            }
+        }
+
+    }
+
+    // (String name, int mass, int diam, int xVel, int yVel, int xPos, int yPos, int[] color)
+    private CelestialBody earth  = new CelestialBody("Earth", 1, 25, 0, 0, 0, 0, Color.BLUE);
+    private CelestialBody mun = new CelestialBody("Mun", .1, 6, .1, 0, 0, 200, Color.GRAY);
+
+    private ArrayList<CelestialBody> GetCelestialBodies() {
+        ArrayList<CelestialBody> celBodyArray = new ArrayList<>();
+        celBodyArray.add(earth);
+        celBodyArray.add(mun);
+
+        return celBodyArray;
+    }
+
+    private void update() {
+        UpdateAllCelestialBodies2();
+    }
+
+
+}
