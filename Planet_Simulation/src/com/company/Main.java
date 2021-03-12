@@ -8,8 +8,8 @@ import java.util.ArrayList;
 public class Main extends Canvas implements Runnable  {
 
     private Thread thread;
-    private JFrame frame;
-    private static String title = "3D Renderer";
+    private final JFrame frame;
+    private static final String title = "3D Renderer";
     private static final int WIDTH = 1280;
     private static final int HEIGHT = 720;
     private static boolean running = false;
@@ -49,7 +49,7 @@ public class Main extends Canvas implements Runnable  {
         }
     }
 
-    private int UPS = 600;
+    private final int UPS = Settings.GetUpdatesPerSecond();
     @Override
     public void run() {
         long lastTime = System.nanoTime();
@@ -73,7 +73,6 @@ public class Main extends Canvas implements Runnable  {
             //render(); // !!!
             frames++;
 
-
             /*
             // Frame Rate Counter
             if(System.currentTimeMillis() - timer > 1000) {
@@ -88,11 +87,6 @@ public class Main extends Canvas implements Runnable  {
         stop();
     }
 
-    private boolean applyOffset = true;
-    private boolean drawDistLines = true;
-    private boolean drawNames = false;
-    private String bodyCenter = "Earth";
-
     private void render() {
         BufferStrategy bs = this.getBufferStrategy();
         if (bs == null) {
@@ -103,71 +97,27 @@ public class Main extends Canvas implements Runnable  {
         g.setColor(Color.BLACK);
         g.fillRect(0,0,WIDTH, HEIGHT);
 
-        // - - -
+        // - - - - -
 
-        int c = 0;
         ArrayList<CelestialBody> CBArray = GetCelestialBodies();
 
-        // Adjust for cam offset
-        int xCamOffset = 0;
-        int yCamOffset = 0;
-        for (CelestialBody body : CBArray) {
-            if (body.name.equals(bodyCenter)) {
-                if (applyOffset) {
-                    xCamOffset = (int)body.xPos;
-                    yCamOffset = (int)body.yPos;
-                } else {
-                    xCamOffset = 0;
-                    yCamOffset = 0;
-                }
-            }
+        // GetCamOffsets
+        int xCamOffset = FunctionList.FindXCamOffset(CBArray);
+        int yCamOffset = FunctionList.FindYCamOffset(CBArray);
+
+
+        if (Settings.GetDrawDistLines()) {
+            DrawDistLinesBetweenBodies(g, CBArray, xCamOffset, yCamOffset);
         }
+        DrawCelestialBodies(g, CBArray, xCamOffset, yCamOffset);
 
-        // Draw line between celestial bodies? Yes!
-        if (drawDistLines) {
-            // Go through each body
-            for (CelestialBody body : CBArray) {
-                // Check for body name (Only draws line for center body)
-                if (body.name.equals(bodyCenter)) {
-                    // Go through each body to draw line toward
-                    for (int j = 0; j < CBArray.size(); j++) {
-                        CelestialBody body2 = CBArray.get(j);
-                        // Ensure body doesn't draw line on itself
-                        if (!body.name.equals(body2.name)) {
-                            // Check if body2 is dead
-                            if (!body2.dead) {
-                                int xPosBody1 = (int)body.xPos;
-                                int yPosBody1 = (int)body.yPos;
-                                int xPosBody2 = (int)body2.xPos;
-                                int yPosBody2 = (int)body2.yPos;
+        // - - - - -
+        g.dispose();
+        bs.show();
+    }
 
-                                int xOffsetBody1 = WIDTH/2 + xPosBody1 - xCamOffset;
-                                int yOffsetBody1 = HEIGHT/2- yPosBody1 + yCamOffset;
-                                int xOffsetBody2 = WIDTH/2 + xPosBody2 - xCamOffset;
-                                int yOffsetBody2 = HEIGHT/2- yPosBody2 + yCamOffset;
-
-                                int xPos = (Math.abs(xOffsetBody1) - Math.abs(xOffsetBody2)) / -2;
-                                int yPos = (Math.abs(yOffsetBody1) - Math.abs(yOffsetBody2)) / -2;
-                                int pDist = (int)(2 * Math.sqrt(Math.pow(xPos,2) + Math.pow(yPos,2)));
-                                int xPosStr = xPos + xOffsetBody1;
-                                int yPosStr = yPos + yOffsetBody1;
-
-                                g.setColor(Color.getHSBColor(0,0,.25f));
-                                Polygon line = new Polygon();
-                                line.addPoint(xOffsetBody1, yOffsetBody1);
-                                line.addPoint(xOffsetBody2, yOffsetBody2);
-                                g.drawPolygon(line);
-                                g.setColor(Color.getHSBColor(0,0,.375f));
-                                g.drawString(String.valueOf(pDist), xPosStr, yPosStr);
-                            }
-                        }
-                    }
-                }
-
-            }
-        }
-
-        // Draw each celestial body
+    private void DrawCelestialBodies(Graphics g, ArrayList<CelestialBody> CBArray, int xCamOffset, int yCamOffset) {
+        int c = 0;
         for (CelestialBody CB : CBArray) {
             int xPos = (int)CB.xPos;
             int yPos = (int)CB.yPos;
@@ -196,16 +146,54 @@ public class Main extends Canvas implements Runnable  {
             g.drawString(posStr, 0, 60 + (c * 60));
 
             // Draw names above planets
-            if (drawNames) {
+            if (Settings.GetDrawNames()) {
                 g.drawString(namStr, xOffset, yOffset - 5);
             }
 
             c++;
         }
 
-        // - - -
-        g.dispose();
-        bs.show();
+    }
+    private void DrawDistLinesBetweenBodies(Graphics g, ArrayList<CelestialBody> CBArray, int xCamOffset, int yCamOffset) {
+        // Go through each body
+        for (CelestialBody body : CBArray) {
+            // Check for body name (Only draws line for center body)
+            if (body.name.equals(Settings.GetBodyCenter())) {
+                // Go through each body to draw line toward
+                for (CelestialBody body2 : CBArray) {
+                    // Ensure body doesn't draw line on itself
+                    if (!body.name.equals(body2.name)) {
+                        // Check if body2 is dead
+                        if (!body2.dead) {
+                            int xPosBody1 = (int) body.xPos;
+                            int yPosBody1 = (int) body.yPos;
+                            int xPosBody2 = (int) body2.xPos;
+                            int yPosBody2 = (int) body2.yPos;
+
+                            int xOffsetBody1 = WIDTH / 2 + xPosBody1 - xCamOffset;
+                            int yOffsetBody1 = HEIGHT / 2 - yPosBody1 + yCamOffset;
+                            int xOffsetBody2 = WIDTH / 2 + xPosBody2 - xCamOffset;
+                            int yOffsetBody2 = HEIGHT / 2 - yPosBody2 + yCamOffset;
+
+                            int xPos = (Math.abs(xOffsetBody1) - Math.abs(xOffsetBody2)) / -2;
+                            int yPos = (Math.abs(yOffsetBody1) - Math.abs(yOffsetBody2)) / -2;
+                            int pDist = (int) (2 * Math.sqrt(Math.pow(xPos, 2) + Math.pow(yPos, 2)));
+                            int xPosStr = xPos + xOffsetBody1;
+                            int yPosStr = yPos + yOffsetBody1;
+
+                            g.setColor(Color.getHSBColor(0, 0, .25f));
+                            Polygon line = new Polygon();
+                            line.addPoint(xOffsetBody1, yOffsetBody1);
+                            line.addPoint(xOffsetBody2, yOffsetBody2);
+                            g.drawPolygon(line);
+                            g.setColor(Color.getHSBColor(0, 0, .375f));
+                            g.drawString(String.valueOf(pDist), xPosStr, yPosStr);
+                        }
+                    }
+                }
+            }
+        }
+
     }
 
     private void UpdateAllCelestialBodies2() {
@@ -214,48 +202,34 @@ public class Main extends Canvas implements Runnable  {
         // Go through all Celestial bodies
         for (int i = 0; i < CBArray.size(); i++) {
             CelestialBody mainBody = CBArray.get(i);
-
             // Determine if mainBody is alive and to proceed with calculation
             if (!mainBody.dead) {
                 ArrayList<Double> xChangeArray = new ArrayList<>();
                 ArrayList<Double> yChangeArray = new ArrayList<>();
                 ArrayList<Double> xAccArray = new ArrayList<>();
                 ArrayList<Double> yAccArray = new ArrayList<>();
-
                 // Go through all bodies that effect main body
-                for (int p = 0; p < CBArray.size(); p++) {
-                    CelestialBody refBody = CBArray.get(p);
-
+                for (CelestialBody refBody : CBArray) {
                     // Ensure program doesn't calculate body on itself
                     if (!mainBody.name.equals(refBody.name)) {
-
                         // Determine if refBody is alive and to proceed with calculation
                         if (!refBody.dead) {
-                            double GC = 6.6743;
+                            double pDist = FunctionList.FindDistanceBetweenTwoBodies(mainBody, refBody);
+                            double xForce = FunctionList.FindXForce(refBody, mainBody);
+                            double yForce = FunctionList.FindYForce(refBody, mainBody);
 
-                            double xDist = refBody.xPos - mainBody.xPos;
-                            double yDist = refBody.yPos - mainBody.yPos;
-                            double pDist = Math.sqrt(Math.pow(xDist, 2) + Math.pow(yDist, 2));
+                            mainBody.xVel = mainBody.xVel + xForce;
+                            mainBody.yVel = mainBody.yVel + yForce;
 
-                            double gForce = (GC * refBody.mass * mainBody.mass) /  Math.pow(pDist, 2);
-                            double xForce = (gForce * xDist) / pDist;
-                            double yForce = (gForce * yDist) / pDist;
-
-                            double xAcc = xForce;
-                            double yAcc = yForce;
-
-                            mainBody.xVel = mainBody.xVel + xAcc;
-                            mainBody.yVel = mainBody.yVel + yAcc;
-
-                            double xChange = (.5 * xAcc) + mainBody.xVel;
-                            double yChange = (.5 * yAcc) + mainBody.yVel;
+                            double xChange = (.5 * xForce) + mainBody.xVel;
+                            double yChange = (.5 * yForce) + mainBody.yVel;
 
                             xChangeArray.add(xChange);
                             yChangeArray.add(yChange);
-                            xAccArray.add(xAcc);
-                            yAccArray.add(yAcc);
+                            xAccArray.add(xForce);
+                            yAccArray.add(yForce);
 
-                            if (pDist < refBody.diam/2) {
+                            if (pDist < refBody.diam / 2f) {
                                 mainBody.dead = true;
                             }
                         }
@@ -294,13 +268,15 @@ public class Main extends Canvas implements Runnable  {
     }
 
     // (String name, int mass, int diam, int xVel, int yVel, int xPos, int yPos, int[] color)
-    private CelestialBody earth  = new CelestialBody("Earth", 1, 25, 0, 0, 0, 0, Color.BLUE);
-    private CelestialBody mun = new CelestialBody("Mun", .12, 6, .0896, 0, 0, 200, Color.GRAY);
+    private final CelestialBody earth  = new CelestialBody("Earth", 5, 25, 0, 0, 0, 0, Color.BLUE);
+    private final CelestialBody mun = new CelestialBody("Mun", .06, 6, .2, 0, 0, 100, Color.GRAY);
+
 
     private ArrayList<CelestialBody> GetCelestialBodies() {
         ArrayList<CelestialBody> celBodyArray = new ArrayList<>();
         celBodyArray.add(earth);
         celBodyArray.add(mun);
+
 
         return celBodyArray;
     }
