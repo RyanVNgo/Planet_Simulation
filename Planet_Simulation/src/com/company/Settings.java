@@ -5,10 +5,10 @@ public class Settings {
     private static final int UPS = 600;
 
     private static final boolean applyOffset = true;
-    private static final boolean followBody = true;
+    private static final boolean followBody = false;
     private static final String bodyCenter = "Pluto";
-    private static final boolean drawDistLines = true;
-    private static final boolean drawNames = true;
+    private static final boolean drawDistLines = false;
+    private static final boolean drawNames = false;
 
     public static int GetUpdatesPerSecond() {
         return UPS;

@@ -4,6 +4,9 @@ import java.util.ArrayList;
 
 public class FunctionList {
 
+    public static int MouseXOffset = 0;
+    public static int MouseYOffset = 0;
+
     public static int FindXCamOffset(ArrayList<CelestialBody> CBArray) {
         int xCamOffset = 0;
         if (Settings.GetApplyOffset()) {
@@ -18,7 +21,7 @@ public class FunctionList {
             }
         }
 
-        return xCamOffset;
+        return xCamOffset + MouseXOffset;
     }
     public static int FindYCamOffset(ArrayList<CelestialBody> CBArray) {
         int yCamOffset = 0;
@@ -34,7 +37,7 @@ public class FunctionList {
             }
         }
 
-        return yCamOffset;
+        return yCamOffset - MouseYOffset;
     }
 
     public static int FindCenterX(ArrayList<CelestialBody> CBArray) {
@@ -60,6 +63,13 @@ public class FunctionList {
         centerY = totalY/CBArray.size();
 
         return centerY;
+    }
+
+    public static void ChangeMouseXOffset(int xMouseChange) {
+        MouseXOffset += xMouseChange;
+    }
+    public static void ChangeMouseYOffset(int yMouseChange) {
+        MouseYOffset += yMouseChange;
     }
 
     public static double FindDistanceBetweenTwoBodies(CelestialBody body1, CelestialBody body2) {

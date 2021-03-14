@@ -14,11 +14,18 @@ public class Main extends Canvas implements Runnable  {
     private static final int HEIGHT = 720;
     private static boolean running = false;
 
+    private Mouse mouse;
     public Main() {
         this.frame = new JFrame();
 
         Dimension size = new Dimension(WIDTH, HEIGHT);
         this.setPreferredSize(size);
+
+        // For mouse control
+        this.mouse = new Mouse();
+        this.addMouseListener(this.mouse);
+        this.addMouseMotionListener(this.mouse);
+        this.addMouseWheelListener(this.mouse);
     }
 
     public static void main(String[] args) {
@@ -149,7 +156,6 @@ public class Main extends Canvas implements Runnable  {
             if (Settings.GetDrawNames()) {
                 g.drawString(namStr, xOffset, yOffset - 5);
             }
-
             c++;
         }
 
@@ -279,8 +285,24 @@ public class Main extends Canvas implements Runnable  {
         return celBodyArray;
     }
 
+    int initialX, initialY;
     private void update() {
         UpdateAllCelestialBodies2();
+
+        // For frame dragging / mouse input (this is bad implementation but it works)  - - - -
+        if (this.mouse.GetMouseB() == 1) {
+            int xChange = initialX - this.mouse.GetMouseX();
+            int yChange = initialY - this.mouse.GetMouseY();
+
+            if (xChange < 10 && xChange > -10 && yChange < 10 && yChange > -10) {
+                FunctionList.ChangeMouseXOffset(xChange);
+                FunctionList.ChangeMouseYOffset(yChange);
+            }
+        }
+        initialX = this.mouse.GetMouseX();
+        initialY = this.mouse.GetMouseY();
+        // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
     }
 
 
