@@ -6,26 +6,60 @@ public class FunctionList {
 
     public static int FindXCamOffset(ArrayList<CelestialBody> CBArray) {
         int xCamOffset = 0;
-        for (CelestialBody body : CBArray) {
-            if (body.name.equals(Settings.GetBodyCenter())) {
-                if (Settings.GetApplyOffset()) {
-                    xCamOffset = (int)body.xPos;
+        if (Settings.GetApplyOffset()) {
+            if (Settings.GetFollowBody()) {
+                for (CelestialBody body : CBArray) {
+                    if (body.name.equals(Settings.GetBodyCenter())) {
+                        xCamOffset = (int)body.xPos;
+                    }
                 }
+            } else {
+                xCamOffset = FindCenterX(CBArray);
             }
         }
+
         return xCamOffset;
     }
     public static int FindYCamOffset(ArrayList<CelestialBody> CBArray) {
         int yCamOffset = 0;
-        for (CelestialBody body : CBArray) {
-            if (body.name.equals(Settings.GetBodyCenter())) {
-                if (Settings.GetApplyOffset()) {
-                    yCamOffset = (int)body.yPos;
+        if (Settings.GetApplyOffset()) {
+            if (Settings.GetFollowBody()) {
+                for (CelestialBody body : CBArray) {
+                    if (body.name.equals(Settings.GetBodyCenter())) {
+                        yCamOffset = (int)body.yPos;
+                    }
                 }
+            } else {
+                yCamOffset = FindCenterY(CBArray);
             }
         }
 
         return yCamOffset;
+    }
+
+    public static int FindCenterX(ArrayList<CelestialBody> CBArray) {
+        int centerX = 0;
+        int totalX = 0;
+
+        for (CelestialBody body : CBArray) {
+            totalX += body.xPos;
+        }
+
+        centerX = totalX/CBArray.size();
+
+        return centerX;
+    }
+    public static int FindCenterY(ArrayList<CelestialBody> CBArray) {
+        int centerY = 0;
+        int totalY = 0;
+
+        for (CelestialBody body : CBArray) {
+            totalY += body.yPos;
+        }
+
+        centerY = totalY/CBArray.size();
+
+        return centerY;
     }
 
     public static double FindDistanceBetweenTwoBodies(CelestialBody body1, CelestialBody body2) {

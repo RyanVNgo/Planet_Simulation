@@ -6,7 +6,7 @@ public class CelestialBody {
 
     public final String name;
     public final double mass;
-    public final int diam;
+    public final double diam;
     public double xVel;
     public double yVel;
     public double xPos;
@@ -18,7 +18,7 @@ public class CelestialBody {
     public double yAcc;
     public boolean dead = false;
 
-    CelestialBody(String name, double mass, int diam, double xVel, double yVel, double xPos, double yPos, Color color) {
+    CelestialBody(String name, double mass, double diam, double xVel, double yVel, double xPos, double yPos, Color color) {
         this.name = name;
         this.mass = mass;
         this.diam = diam;

@@ -121,7 +121,7 @@ public class Main extends Canvas implements Runnable  {
         for (CelestialBody CB : CBArray) {
             int xPos = (int)CB.xPos;
             int yPos = (int)CB.yPos;
-            int d = CB.diam;
+            int d = (int)CB.diam; // !!!
             int r = d/2;
 
             int xOffset = WIDTH/2 - r + xPos - xCamOffset;
@@ -268,15 +268,13 @@ public class Main extends Canvas implements Runnable  {
     }
 
     // (String name, int mass, int diam, int xVel, int yVel, int xPos, int yPos, int[] color)
-    private final CelestialBody earth  = new CelestialBody("Earth", 5, 25, 0, 0, 0, 0, Color.BLUE);
-    private final CelestialBody mun = new CelestialBody("Mun", .06, 6, .2, 0, 0, 100, Color.GRAY);
-
+    private final CelestialBody pluto = new CelestialBody("Pluto", 1.309, 14.768, 0, 0, 0, 0, Color.LIGHT_GRAY);
+    private final CelestialBody charon = new CelestialBody("Charon", .16, 7.531, 0.152, 0, 0, 122, Color.GRAY);
 
     private ArrayList<CelestialBody> GetCelestialBodies() {
         ArrayList<CelestialBody> celBodyArray = new ArrayList<>();
-        celBodyArray.add(earth);
-        celBodyArray.add(mun);
-
+        celBodyArray.add(pluto);
+        celBodyArray.add(charon);;
 
         return celBodyArray;
     }
