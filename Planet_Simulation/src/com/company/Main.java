@@ -112,11 +112,15 @@ public class Main extends Canvas implements Runnable  {
         int xCamOffset = FunctionList.FindXCamOffset(CBArray);
         int yCamOffset = FunctionList.FindYCamOffset(CBArray);
 
+        if (Settings.GetDrawGridLines()) {
+            DrawGridLines(g);
+        }
 
         if (Settings.GetDrawDistLines()) {
             DrawDistLinesBetweenBodies(g, CBArray, xCamOffset, yCamOffset);
         }
         DrawCelestialBodies(g, CBArray, xCamOffset, yCamOffset);
+
 
         // - - - - -
         g.dispose();
@@ -201,6 +205,24 @@ public class Main extends Canvas implements Runnable  {
         }
 
     }
+    private void DrawGridLines(Graphics g) {
+        int x = FunctionList.GetMouseXOffset();
+        int y = FunctionList.GetMouseYOffset();
+
+        for (int i = x; i < WIDTH+x; i++) {
+            if (i % 100 == 0) {
+                g.setColor(Color.getHSBColor(0, 0, .1f));
+                g.drawLine(i-x, 0, i-x, HEIGHT);
+            }
+        }
+        for (int i = y; i < HEIGHT+y; i++) {
+            if (i % 100 == 0) {
+                g.setColor(Color.getHSBColor(0, 0, .1f));
+                g.drawLine(0, i-y, WIDTH, i-y);
+            }
+        }
+
+    }
 
     private void UpdateAllCelestialBodies2() {
         ArrayList<CelestialBody> CBArray = GetCelestialBodies();
@@ -224,8 +246,8 @@ public class Main extends Canvas implements Runnable  {
                             double xForce = FunctionList.FindXForce(refBody, mainBody);
                             double yForce = FunctionList.FindYForce(refBody, mainBody);
 
-                            mainBody.xVel = mainBody.xVel + xForce;
-                            mainBody.yVel = mainBody.yVel + yForce;
+                            mainBody.xVel = mainBody.xVel + xForce/mainBody.mass;
+                            mainBody.yVel = mainBody.yVel + yForce/mainBody.mass;
 
                             double xChange = (.5 * xForce) + mainBody.xVel;
                             double yChange = (.5 * yForce) + mainBody.yVel;
@@ -275,7 +297,7 @@ public class Main extends Canvas implements Runnable  {
 
     // (String name, int mass, int diam, int xVel, int yVel, int xPos, int yPos, int[] color)
     private final CelestialBody pluto = new CelestialBody("Pluto", 1.309, 14.768, 0, 0, 0, 0, Color.LIGHT_GRAY);
-    private final CelestialBody charon = new CelestialBody("Charon", .16, 7.531, 0.152, 0, 0, 122, Color.GRAY);
+    private final CelestialBody charon = new CelestialBody("Charon", .16, 7.531, 0.396, 0, 0, 100, Color.GRAY);
 
     private ArrayList<CelestialBody> GetCelestialBodies() {
         ArrayList<CelestialBody> celBodyArray = new ArrayList<>();

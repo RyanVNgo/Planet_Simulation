@@ -4,11 +4,12 @@ public class Settings {
 
     private static final int UPS = 600;
 
-    private static final boolean applyOffset = true;
+    private static final boolean applyOffset = false;
     private static final boolean followBody = false;
     private static final String bodyCenter = "Pluto";
-    private static final boolean drawDistLines = false;
-    private static final boolean drawNames = false;
+    private static final boolean drawDistLines = true;
+    private static final boolean drawNames = true;
+    private static final boolean drawGridLines = true;
 
     public static int GetUpdatesPerSecond() {
         return UPS;
@@ -27,6 +28,9 @@ public class Settings {
     }
     public static boolean GetDrawNames() {
         return drawNames;
+    }
+    public static boolean GetDrawGridLines() {
+        return drawGridLines;
     }
 
 

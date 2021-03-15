@@ -6,6 +6,12 @@ public class FunctionList {
 
     public static int MouseXOffset = 0;
     public static int MouseYOffset = 0;
+    public static int GetMouseXOffset() {
+        return MouseXOffset;
+    }
+    public static int GetMouseYOffset() {
+        return MouseYOffset;
+    }
 
     public static int FindXCamOffset(ArrayList<CelestialBody> CBArray) {
         int xCamOffset = 0;
