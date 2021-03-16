@@ -148,7 +148,7 @@ public class Main extends Canvas implements Runnable  {
             String namStr = CB.name;
             String velStr = String.format("Vel: (%.3f , %.3f)", CB.xVel, CB.yVel);
             String spdStr = String.format("Spd: %.3f", CB.speed);
-            String accStr = String.format("Acc: (%.3f , %.3f)", CB.xAcc, CB.yAcc);
+            String accStr = String.format("Acc: (%.5f , %.5f)", CB.xAcc, CB.yAcc);
             String posStr = String.format("Pos: (%.3f , %.3f)", CB.xPos, CB.yPos);
 
             g.drawString(namStr, 0, 12 + (c * 60));
@@ -169,35 +169,30 @@ public class Main extends Canvas implements Runnable  {
     // Methods for optional settings
     private void DrawDistLinesBetweenBodies(Graphics g, ArrayList<CelestialBody> CBArray, int xCamOffset, int yCamOffset) {
         // Go through each body
-        for (CelestialBody body : CBArray) {
+        for (CelestialBody body1 : CBArray) {
             // Check for body name (Only draws line for center body)
-            if (body.name.equals(Settings.GetBodyCenter())) {
+            if (body1.name.equals(Settings.GetBodyCenter())) {
                 // Go through each body to draw line toward
                 for (CelestialBody body2 : CBArray) {
                     // Ensure body doesn't draw line on itself
-                    if (!body.name.equals(body2.name)) {
+                    if (!body1.name.equals(body2.name)) {
                         // Check if body2 is dead
                         if (!body2.dead) {
-                            int xPosBody1 = (int) body.xPos;
-                            int yPosBody1 = (int) body.yPos;
-                            int xPosBody2 = (int) body2.xPos;
-                            int yPosBody2 = (int) body2.yPos;
+                            int xVisOffset = WIDTH/2 - xCamOffset;
+                            int yVisOffset = HEIGHT/2 + yCamOffset;
 
-                            int xOffsetBody1 = WIDTH / 2 + xPosBody1 - xCamOffset;
-                            int yOffsetBody1 = HEIGHT / 2 - yPosBody1 + yCamOffset;
-                            int xOffsetBody2 = WIDTH / 2 + xPosBody2 - xCamOffset;
-                            int yOffsetBody2 = HEIGHT / 2 - yPosBody2 + yCamOffset;
-
-                            int xPos = (Math.abs(xOffsetBody1) - Math.abs(xOffsetBody2)) / -2;
-                            int yPos = (Math.abs(yOffsetBody1) - Math.abs(yOffsetBody2)) / -2;
-                            int pDist = (int) (2 * Math.sqrt(Math.pow(xPos, 2) + Math.pow(yPos, 2)));
-                            int xPosStr = xPos + xOffsetBody1;
-                            int yPosStr = yPos + yOffsetBody1;
-
+                            int xLineP1 = (int)body1.xPos + xVisOffset;
+                            int yLineP1 = yVisOffset - (int)body1.yPos;
+                            int xLineP2 = (int)body2.xPos + xVisOffset;
+                            int yLineP2 = yVisOffset - (int)body2.yPos;
                             g.setColor(Color.getHSBColor(0, 0, .25f));
-                            g.drawLine(xOffsetBody1, yOffsetBody1, xOffsetBody2, yOffsetBody2);
+                            g.drawLine(xLineP1, yLineP1, xLineP2, yLineP2);
+
+                            int xStrPos = (xLineP1 + xLineP2)/2;
+                            int yStrPos = (yLineP1 + yLineP2)/2;
+                            int pDist = (int)FunctionList.FindDistanceBetweenTwoBodies(body1, body2);
                             g.setColor(Color.getHSBColor(0, 0, .375f));
-                            g.drawString(String.valueOf(pDist), xPosStr, yPosStr);
+                            g.drawString(String.valueOf(pDist), xStrPos, yStrPos);
                         }
                     }
                 }
@@ -224,6 +219,7 @@ public class Main extends Canvas implements Runnable  {
 
     }
     private void DrawPointerLines(Graphics g,  ArrayList<CelestialBody> CBArray, int xCamOffset, int yCamOffset) {
+        // Cycles through each celestial body
         for (CelestialBody body : CBArray) {
             int xCenter = WIDTH/2;
             int yCenter = HEIGHT/2;
@@ -232,27 +228,24 @@ public class Main extends Canvas implements Runnable  {
             int yPortion = -(int)body.yPos + yCamOffset;
             int lineLength = (int)Math.sqrt(Math.pow(xPortion, 2) + Math.pow(yPortion, 2));
 
+            // Draws pointer if distance exceeds specified amount
             if (lineLength > 250) {
-                int xFinal = xCenter + xPortion/5;
-                int yFinal = yCenter + yPortion/5;
+                int xFinal = xCenter + xPortion/6;
+                int yFinal = yCenter + yPortion/6;
 
-                // Determines luminance value of lines/names
+                // Determines luminance value of lines & names
                 float bValue = (float)lineLength/1000 - 0.25f;
                 if (bValue > 1) {
                     bValue = 1;
                 }
 
+                // Locks length of pointer if it exceeds certain length
                 if (lineLength > 1000) {
-                    xFinal = xCenter +(50 * xPortion / lineLength);
+                    xFinal = xCenter + (50 * xPortion / lineLength);
                     yFinal = yCenter + (50 * yPortion / lineLength);
-
-                    g.setColor(Color.getHSBColor(0, 0, bValue));
-                    g.drawLine(xCenter, yCenter, xFinal, yFinal);
-                    g.setColor(Color.getHSBColor(0, 0, bValue));
-                    g.drawString(body.name, xFinal, yFinal);
                 }
 
-                // Draws lines and names
+                // Draws lines & names
                 g.setColor(Color.getHSBColor(0, 0, bValue));
                 g.drawLine(xCenter, yCenter, xFinal, yFinal);
                 g.setColor(Color.getHSBColor(0, 0, bValue));
@@ -267,14 +260,14 @@ public class Main extends Canvas implements Runnable  {
         ArrayList<CelestialBody> CBArray = GetCelestialBodies();
 
         // Go through all Celestial bodies
-        for (int i = 0; i < CBArray.size(); i++) {
-            CelestialBody mainBody = CBArray.get(i);
+        for (CelestialBody mainBody : CBArray) {
             // Determine if mainBody is alive and to proceed with calculation
             if (!mainBody.dead) {
                 ArrayList<Double> xChangeArray = new ArrayList<>();
                 ArrayList<Double> yChangeArray = new ArrayList<>();
                 ArrayList<Double> xAccArray = new ArrayList<>();
                 ArrayList<Double> yAccArray = new ArrayList<>();
+
                 // Go through all bodies that effect main body
                 for (CelestialBody refBody : CBArray) {
                     // Ensure program doesn't calculate body on itself
@@ -285,16 +278,16 @@ public class Main extends Canvas implements Runnable  {
                             double xForce = FunctionList.FindXForce(refBody, mainBody);
                             double yForce = FunctionList.FindYForce(refBody, mainBody);
 
-                            mainBody.xVel = mainBody.xVel + xForce/mainBody.mass;
-                            mainBody.yVel = mainBody.yVel + yForce/mainBody.mass;
+                            mainBody.xVel += xForce/mainBody.mass;
+                            mainBody.yVel += yForce/mainBody.mass;
 
                             double xChange = (.5 * xForce) + mainBody.xVel;
                             double yChange = (.5 * yForce) + mainBody.yVel;
 
                             xChangeArray.add(xChange);
                             yChangeArray.add(yChange);
-                            xAccArray.add(xForce);
-                            yAccArray.add(yForce);
+                            xAccArray.add(xForce/mainBody.mass);
+                            yAccArray.add(yForce/mainBody.mass);
 
                             if (pDist < refBody.diam / 2f) {
                                 mainBody.dead = true;
@@ -324,11 +317,9 @@ public class Main extends Canvas implements Runnable  {
 
                 mainBody.xPos = mainBody.xPos + sumXChange;
                 mainBody.yPos = mainBody.yPos + sumYChange;
-
-                mainBody.UpdateSpeed();
                 mainBody.xAcc = sumXAcc;
                 mainBody.yAcc = sumYAcc;
-
+                mainBody.UpdateSpeed();
             }
         }
 
