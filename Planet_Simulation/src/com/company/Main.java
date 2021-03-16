@@ -105,7 +105,6 @@ public class Main extends Canvas implements Runnable  {
         g.fillRect(0,0,WIDTH, HEIGHT);
 
         // - - - - -
-
         ArrayList<CelestialBody> CBArray = GetCelestialBodies();
 
         // GetCamOffsets
@@ -115,18 +114,21 @@ public class Main extends Canvas implements Runnable  {
         if (Settings.GetDrawGridLines()) {
             DrawGridLines(g);
         }
-
         if (Settings.GetDrawDistLines()) {
             DrawDistLinesBetweenBodies(g, CBArray, xCamOffset, yCamOffset);
         }
-        DrawCelestialBodies(g, CBArray, xCamOffset, yCamOffset);
+        if (Settings.GetDrawPointerLines()) {
+            DrawPointerLines(g, CBArray, xCamOffset, yCamOffset);
+        }
 
+        DrawCelestialBodies(g, CBArray, xCamOffset, yCamOffset);
 
         // - - - - -
         g.dispose();
         bs.show();
     }
 
+    // Methods for always rendered things
     private void DrawCelestialBodies(Graphics g, ArrayList<CelestialBody> CBArray, int xCamOffset, int yCamOffset) {
         int c = 0;
         for (CelestialBody CB : CBArray) {
@@ -139,7 +141,6 @@ public class Main extends Canvas implements Runnable  {
             int yOffset = HEIGHT/2 - r - yPos + yCamOffset;
 
             g.setColor(CB.color);
-            //g.drawOval(xOffset, yOffset, d, d);
             g.fillOval(xOffset, yOffset, d, d);
 
             // Draw data for each celestial body
@@ -164,6 +165,8 @@ public class Main extends Canvas implements Runnable  {
         }
 
     }
+
+    // Methods for optional settings
     private void DrawDistLinesBetweenBodies(Graphics g, ArrayList<CelestialBody> CBArray, int xCamOffset, int yCamOffset) {
         // Go through each body
         for (CelestialBody body : CBArray) {
@@ -192,10 +195,7 @@ public class Main extends Canvas implements Runnable  {
                             int yPosStr = yPos + yOffsetBody1;
 
                             g.setColor(Color.getHSBColor(0, 0, .25f));
-                            Polygon line = new Polygon();
-                            line.addPoint(xOffsetBody1, yOffsetBody1);
-                            line.addPoint(xOffsetBody2, yOffsetBody2);
-                            g.drawPolygon(line);
+                            g.drawLine(xOffsetBody1, yOffsetBody1, xOffsetBody2, yOffsetBody2);
                             g.setColor(Color.getHSBColor(0, 0, .375f));
                             g.drawString(String.valueOf(pDist), xPosStr, yPosStr);
                         }
@@ -223,7 +223,46 @@ public class Main extends Canvas implements Runnable  {
         }
 
     }
+    private void DrawPointerLines(Graphics g,  ArrayList<CelestialBody> CBArray, int xCamOffset, int yCamOffset) {
+        for (CelestialBody body : CBArray) {
+            int xCenter = WIDTH/2;
+            int yCenter = HEIGHT/2;
 
+            int xPortion = (int)body.xPos - xCamOffset;
+            int yPortion = -(int)body.yPos + yCamOffset;
+            int lineLength = (int)Math.sqrt(Math.pow(xPortion, 2) + Math.pow(yPortion, 2));
+
+            if (lineLength > 250) {
+                int xFinal = xCenter + xPortion/5;
+                int yFinal = yCenter + yPortion/5;
+
+                // Determines luminance value of lines/names
+                float bValue = (float)lineLength/1000 - 0.25f;
+                if (bValue > 1) {
+                    bValue = 1;
+                }
+
+                if (lineLength > 1000) {
+                    xFinal = xCenter +(50 * xPortion / lineLength);
+                    yFinal = yCenter + (50 * yPortion / lineLength);
+
+                    g.setColor(Color.getHSBColor(0, 0, bValue));
+                    g.drawLine(xCenter, yCenter, xFinal, yFinal);
+                    g.setColor(Color.getHSBColor(0, 0, bValue));
+                    g.drawString(body.name, xFinal, yFinal);
+                }
+
+                // Draws lines and names
+                g.setColor(Color.getHSBColor(0, 0, bValue));
+                g.drawLine(xCenter, yCenter, xFinal, yFinal);
+                g.setColor(Color.getHSBColor(0, 0, bValue));
+                g.drawString(body.name, xFinal, yFinal);
+            }
+        }
+
+    }
+
+    // Methods for computational changes to celestial bodies
     private void UpdateAllCelestialBodies2() {
         ArrayList<CelestialBody> CBArray = GetCelestialBodies();
 
